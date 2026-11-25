@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id               Int             @id @default(autoincrement())
+  name             String
+  createdAt        DateTime        @default(now())
+  activeIngredient String
+  barcode          String?         @unique
+  dosageForm       String
+  isActive         Boolean         @default(true)
+  manufacturer     String
+  strength         String
+  updatedAt        DateTime        @updatedAt
+  imageUrl         String?
+  batches          Batch[]
+  branches         BranchProduct[]
+}
+
+model Branch {
+  id        Int             @id @default(autoincrement())
+  name      String
+  address   String
+  createdAt DateTime        @default(now())
+  isActive  Boolean         @default(true)
+  products  BranchProduct[]
+  inventory Inventory[]
+}
+
+model BranchProduct {
+  id           Int     @id @default(autoincrement())
+  branchId     Int
+  productId    Int
+  sellingPrice Decimal @db.Decimal(10, 2)
+  isAvailable  Boolean @default(true)
+  branch       Branch  @relation(fields: [branchId], references: [id])
+  product      Product @relation(fields: [productId], references: [id])
+
+  @@unique([branchId, productId])
+}
+
+model Batch {
+  id          Int         @id @default(autoincrement())
+  productId   Int
+  batchNumber String
+  expiryDate  DateTime
+  createdAt   DateTime    @default(now())
+  product     Product     @relation(fields: [productId], references: [id])
+  inventory   Inventory[]
+
+  @@unique([productId, batchNumber])
+}
+
+model Inventory {
+  id             Int             @id @default(autoincrement())
+  branchId       Int
+  batchId        Int
+  quantity       Int             @default(0)
+  batch          Batch           @relation(fields: [batchId], references: [id])
+  branch         Branch          @relation(fields: [branchId], references: [id])
+  stockMovements StockMovement[]
+
+  @@unique([branchId, batchId])
+  @@index([batchId])
+}
+model StockMovement {
+  id             Int               @id @default(autoincrement())
+  inventoryId    Int
+  type            StockMovementType
+  quantity        Int
+  quantityBefore  Int
+  quantityAfter   Int
+  createdAt       DateTime          @default(now())
+  inventory       Inventory         @relation(fields: [inventoryId], references: [id])
+}
+
+enum StockMovementType {
+  STOCK_IN
+  STOCK_OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+model Supplier{
+   id             Int               @id @default(autoincrement())
+name              String
+email             String?
+phone             String
+address           String?
+isActive          Boolean            @default(true)
+   createdAt       DateTime          @default(now())
+
+updatedAt DateTime @updatedAt
+}
